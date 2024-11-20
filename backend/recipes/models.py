@@ -38,15 +38,14 @@ class Recipe(models.Model):
                                  max_length=settings.MAX_LENGTH_SHORT_URL)
     tag = models.ManyToManyField(Tag, through='RecipeTag')
 
-
     def save(self, *args, **kwargs):
         while True:
             self.short_url = ''.join(
-                random.choice(settings.SYMBOLS_FOR_SHORT_URL))
+                random.choices(settings.SYMBOLS_FOR_SHORT_URL,
+                               k=settings.MAX_LENGTH_SHORT_URL))
             if not Recipe.objects.filter(short_url=self.short_url).exists():
                 break
         super(Recipe, self).save(*args, **kwargs)
-
 
     class Meta:
         ordering = ('name', 'id')
@@ -77,22 +76,22 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = 'Ингридиенты рецептов'
 
 
-# class Favorite(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE,
-#                              related_name='saver', verbose_name='пользователь')
-#     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-#                                related_name='save', verbose_name='рецепт')
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='saver', verbose_name='пользователь')
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
+                               related_name='favorite', verbose_name='рецепт')
 
-#     class Meta:
-#         constraints = [
-#             models.UniqueConstraint(
-#                 fields=['user', 'recipe'],
-#                 name='Unique save constraint'
-#             )
-#         ]
-#         ordering = ('recipe', 'user')
-#         verbose_name = 'избранное'
-#         verbose_name_plural = 'Избранное'
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='Unique save constraint'
+            )
+        ]
+        ordering = ('recipe', 'user')
+        verbose_name = 'избранное'
+        verbose_name_plural = 'Избранное'
 
 
 class RecipeTag(models.Model):
