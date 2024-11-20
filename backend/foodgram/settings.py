@@ -25,10 +25,10 @@ INSTALLED_APPS = [
     'djoser',
     'django_cleanup.apps.CleanupConfig',
     'core.apps.CoreConfig',
-    'purchases.apps.PurchasesConfig',
     'recipes.apps.RecipesConfig',
     'users.apps.UsersConfig',
-    'api.apps.ApiConfig'
+    'api.apps.ApiConfig',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -108,9 +108,9 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user_create': 'api.serializers.CustomUserCreateSerializer',
-        'user': 'api.serializers.UserSerializer',
-        'current_user': 'api.serializers.UserSerializer'
+        'user_create': 'users.serializers.CustomUserCreateSerializer',
+        'user': 'users.serializers.UserSerializer',
+        'current_user': 'users.serializers.UserSerializer'
     },
     'PERMISSIONS': {
         'user': ['rest_framework.permissions.AllowAny'],
@@ -149,6 +149,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MAX_LENGTH_NAME_USER = 150
 MAX_LENGTH_EMAIL = 254
 MAX_LENGTH_TAG = 32
+MAX_LENGTH_SHORT_URL = 6
 MAX_LENGTH_NAME_RECIPE = 256
 MAX_LENGTH_NAME_INGREDIENT = 128
 MAX_LENGTH_MEASUREMENT_UNIT = 64
+
+ACTION_FOR_USER = ['me', 'update_avatar', 'subscriptions', 'delete_avatar',
+                   'create_subscribe', 'delete_subscribe']
+
+SYMBOLS_FOR_SHORT_URL = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
+

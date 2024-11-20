@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Recipe, Ingredient, RecipeIngredient, RecipeTag, Favorite
+from .models import (Recipe, Ingredient, RecipeIngredient,
+                     RecipeTag, Favorite, PurchaseUser)
 
 
 class FavoriteStackedInline(admin.StackedInline):
@@ -22,5 +23,6 @@ class IngredientAdmin(admin.ModelAdmin):
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(RecipeIngredient)
+admin.site.register(PurchaseUser)
 admin.site.register(Favorite)
 admin.site.register(RecipeTag)

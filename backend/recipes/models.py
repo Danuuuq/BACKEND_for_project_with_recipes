@@ -1,3 +1,5 @@
+import random
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
@@ -31,23 +33,39 @@ class Recipe(models.Model):
                               null=False, blank=False)
     cooking_time = models.IntegerField('время готовки',
                                        validators=[MinValueValidator(1)])
+    # ingredient = models.ManyToManyField(Ingredient, through='RecipeIngredient')
+    short_url = models.CharField('Короткая ссылка', auto_created=True,
+                                 max_length=settings.MAX_LENGTH_SHORT_URL)
+    # tag = models.ManyToManyField(Tag, through='RecipeTag')
+
+
+    def save(self, *args, **kwargs):
+        super(Recipe, self).save(*args, **kwargs)
+        while True:
+            self.short_url = ''.join(
+                random.choice(settings.SYMBOLS_FOR_SHORT_URL,
+                              k=settings.MAX_LENGTH_SHORT_URL))
+            if not Recipe.objects.filter(short_url=self.short_url).exists():
+                break
+        super(Recipe, self).save(*args, **kwargs)
+
 
     class Meta:
         ordering = ('name', 'id')
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
-        default_related_name = 'recipe'
+        default_related_name = 'recipes'
 
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='recipe',
+                               related_name='recipeingredient',
                                verbose_name='рецепт')
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE,
-                                   related_name='ingredient',
+                                   related_name='ingredientrecipe',
                                    verbose_name='ингредиент')
-    quantity = models.IntegerField('количество',
-                                   validators=[MinValueValidator(1)])
+    amount = models.IntegerField('количество',
+                                 validators=[MinValueValidator(1)])
 
     class Meta:
         constraints = [
@@ -81,9 +99,9 @@ class Favorite(models.Model):
 
 class RecipeTag(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE,
-                            related_name='tag', verbose_name='тег')
+                            related_name='tagrecipe', verbose_name='тег')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='recipes', verbose_name='рецепт')
+                               related_name='recipetag', verbose_name='рецепт')
 
     class Meta:
         constraints = [
@@ -95,3 +113,21 @@ class RecipeTag(models.Model):
         ordering = ('recipe', 'tag')
         verbose_name = 'тег рецепта'
         verbose_name_plural = 'Теги рецептов'
+
+
+class PurchaseUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='buyer', verbose_name='пользователь')
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
+                               related_name='purchase', verbose_name='рецепт')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'user'],
+                name='Unique purchase constraint'
+            )
+        ]
+        ordering = ('recipe', 'user')
+        verbose_name = 'покупки пользователя'
+        verbose_name_plural = 'Покупки пользователей'
