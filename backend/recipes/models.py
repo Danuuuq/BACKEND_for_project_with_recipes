@@ -20,7 +20,7 @@ class Ingredient(models.Model):
         ordering = ('name', 'id')
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        default_related_name = 'ingredient'
+        default_related_name = 'ingredient'    
 
 
 class Recipe(models.Model):
@@ -33,18 +33,16 @@ class Recipe(models.Model):
                               null=False, blank=False)
     cooking_time = models.IntegerField('время готовки',
                                        validators=[MinValueValidator(1)])
-    # ingredient = models.ManyToManyField(Ingredient, through='RecipeIngredient')
+    ingredient = models.ManyToManyField(Ingredient, through='RecipeIngredient')
     short_url = models.CharField('Короткая ссылка', auto_created=True,
                                  max_length=settings.MAX_LENGTH_SHORT_URL)
-    # tag = models.ManyToManyField(Tag, through='RecipeTag')
+    tag = models.ManyToManyField(Tag, through='RecipeTag')
 
 
     def save(self, *args, **kwargs):
-        super(Recipe, self).save(*args, **kwargs)
         while True:
             self.short_url = ''.join(
-                random.choice(settings.SYMBOLS_FOR_SHORT_URL,
-                              k=settings.MAX_LENGTH_SHORT_URL))
+                random.choice(settings.SYMBOLS_FOR_SHORT_URL))
             if not Recipe.objects.filter(short_url=self.short_url).exists():
                 break
         super(Recipe, self).save(*args, **kwargs)
@@ -79,22 +77,22 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = 'Ингридиенты рецептов'
 
 
-class Favorite(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name='saver', verbose_name='пользователь')
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='save', verbose_name='рецепт')
+# class Favorite(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE,
+#                              related_name='saver', verbose_name='пользователь')
+#     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
+#                                related_name='save', verbose_name='рецепт')
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='Unique save constraint'
-            )
-        ]
-        ordering = ('recipe', 'user')
-        verbose_name = 'избранное'
-        verbose_name_plural = 'Избранное'
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(
+#                 fields=['user', 'recipe'],
+#                 name='Unique save constraint'
+#             )
+#         ]
+#         ordering = ('recipe', 'user')
+#         verbose_name = 'избранное'
+#         verbose_name_plural = 'Избранное'
 
 
 class RecipeTag(models.Model):

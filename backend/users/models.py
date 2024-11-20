@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.db import models
 
+from .managers import UserManager
 
 class User(AbstractUser):
     first_name = models.CharField('имя',
@@ -15,7 +16,7 @@ class User(AbstractUser):
                                blank=True, default=None)
 
     class Meta:
-        ordering = ('username', 'id')
+        # ordering = ('username', 'id')
         verbose_name = 'пользователь'
         verbose_name_plural = 'Пользователи'
-        default_related_name = 'user'
+        # default_related_name = 'user'

@@ -2,7 +2,6 @@ import base64
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers
-from django.shortcuts import get_object_or_404
 
 from core.models import Tag
 from .models import Ingredient, Recipe, RecipeIngredient, RecipeTag
@@ -72,24 +71,20 @@ class RecipeTagSerializer(serializers.Serializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    is_favorited = BooleanAddField(read_only=True, source='save')
+    # is_favorited = BooleanAddField(read_only=True, source='save')
     tags = RecipeTagSerializer(many=True)
     ingredients = RecipeIngredientSerializer(many=True)
-    is_in_shopping_cart = BooleanAddField(read_only=True, source='purchase')
+    # is_in_shopping_cart = BooleanAddField(read_only=True, source='purchase')
     image = Base64ImageField(required=True, allow_null=False)
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
         default=serializers.CurrentUserDefault())
-    
-    def save(self, **kwargs):
-        # breakpoint()
-        return super().save(**kwargs)
 
     def create(self, validated_data):
+        breakpoint()
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        breakpoint()
         recipe = Recipe.objects.create(**validated_data)
         for tag in tags:
             RecipeTag.objects.create(recipe=recipe, tag=tag)

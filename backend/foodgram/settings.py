@@ -1,4 +1,3 @@
-from datetime import timedelta
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -8,7 +7,6 @@ SECRET_KEY = 'django-insecure-qyi*9n=^(k*tqp0*=fx81mk#xt)_f$2%=^&y#q-$2p3l^hy_)1
 DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.1.93', '188.242.167.244']
-
 
 # Application definition
 
@@ -158,4 +156,3 @@ ACTION_FOR_USER = ['me', 'update_avatar', 'subscriptions', 'delete_avatar',
                    'create_subscribe', 'delete_subscribe']
 
 SYMBOLS_FOR_SHORT_URL = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'
-
