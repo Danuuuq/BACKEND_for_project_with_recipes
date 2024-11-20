@@ -6,7 +6,7 @@ SECRET_KEY = 'django-insecure-qyi*9n=^(k*tqp0*=fx81mk#xt)_f$2%=^&y#q-$2p3l^hy_)1
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.93', '188.242.167.244']
+ALLOWED_HOSTS = ['192.168.1.93', '188.242.167.244', '127.0.0.1']
 
 # Application definition
 
@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     'recipes.apps.RecipesConfig',
     'users.apps.UsersConfig',
     'api.apps.ApiConfig',
-    'django_extensions'
 ]
 
 MIDDLEWARE = [
