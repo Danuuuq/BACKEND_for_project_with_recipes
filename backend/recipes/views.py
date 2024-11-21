@@ -25,7 +25,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
+    # queryset = Recipe.objects.all()
+    queryset = Recipe.objects.prefetch_related('recipetag', 'recipeingredient').all()
     serializer_class = RecipeSerializer
     permission_classes = (permissions.AllowAny,)
     pagination_class = None

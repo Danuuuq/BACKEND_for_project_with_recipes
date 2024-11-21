@@ -10,7 +10,20 @@ from core.models import Tag
 User = get_user_model()
 
 
+class IngredientQuerySet(models.QuerySet):
+
+    def with_related_data(self):
+        return self.prefetch_related('ingredient')
+
+
+class IngredientManager(models.Manager):
+    
+    def get_queryset(self):
+        return IngredientQuerySet(self.model).with_related_data()
+
+
 class Ingredient(models.Model):
+
     name = models.CharField('название',
                             max_length=settings.MAX_LENGTH_NAME_INGREDIENT)
     measurement_unit = models.CharField(
@@ -64,6 +77,9 @@ class RecipeIngredient(models.Model):
     amount = models.IntegerField('количество',
                                  validators=[MinValueValidator(1)])
 
+    objects = IngredientQuerySet.as_manager()
+    published = IngredientManager()
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -74,6 +90,7 @@ class RecipeIngredient(models.Model):
         ordering = ('recipe', 'ingredient')
         verbose_name = 'ингридиенты рецепта'
         verbose_name_plural = 'Ингридиенты рецептов'
+        default_manager_name = 'published'
 
 
 class Favorite(models.Model):

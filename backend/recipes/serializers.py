@@ -28,12 +28,16 @@ class BooleanAddField(serializers.RelatedField):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    
+    def to_representation(self, instance):
+        return super().to_representation(instance)
 
     class Meta:
         model = Tag
         fields = ('id', 'name', 'slug')
         lookup_field = 'slug'
         read_only = ('id', 'slug')
+
 
 class IngredientSerializer(serializers.ModelSerializer):
 
@@ -44,19 +48,27 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    id = serializers.SlugRelatedField(read_only=True, slug_field='id', source='ingredient')
+    id = serializers.PrimaryKeyRelatedField(source='ingredient',
+                                            read_only=True)
+    name = serializers.PrimaryKeyRelatedField(source='ingredient',
+                                              read_only=True)
+    measurement_unit = serializers.PrimaryKeyRelatedField(source='ingredient',
+                                                          read_only=True)
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'amount')
+        fields = ('id', 'name', 'measurement_unit', 'amount')
+        # depth = 1
 
 
-class RecipeTagSerializer(serializers.Serializer):
-    # id = serializers.SlugRelatedField(queryset=Tag.objects.all(),
-    #                                   slug_field='id', source='tag')
-    id = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all())
+class RecipeTagSerializer(serializers.ModelSerializer):
+
+    def to_representation(self, instance):
+        instance = instance.tag
+        return super().to_representation(instance)
 
     def to_internal_value(self, data):
+        breakpoint()
         try:
             data = Tag.objects.get(id=data)
         except Tag.DoesNotExist:
@@ -65,15 +77,16 @@ class RecipeTagSerializer(serializers.Serializer):
         return data
 
     class Meta:
-        model = RecipeTag
-        fields = ('recipe', 'tag')
-        read_only = ('recipe', )
+        model = Tag
+        fields = ('id', 'name', 'slug')
+        read_only = ('id', 'name', 'slug')
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    # is_favorited = BooleanAddField(read_only=True, source='save')
-    tags = RecipeTagSerializer(many=True)
-    ingredients = RecipeIngredientSerializer(many=True)
+    is_favorited = BooleanAddField(read_only=True, source='save')
+    tags = RecipeTagSerializer(many=True, source='recipetag')
+    ingredients = RecipeIngredientSerializer(many=True,
+                                             source='recipeingredient')
     # is_in_shopping_cart = BooleanAddField(read_only=True, source='purchase')
     image = Base64ImageField(required=True, allow_null=False)
     author = serializers.SlugRelatedField(
@@ -82,9 +95,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault())
 
     def create(self, validated_data):
-        breakpoint()
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
+        tags = validated_data.pop('recipetag')
+        ingredients = validated_data.pop('recipeingredient')
         recipe = Recipe.objects.create(**validated_data)
         for tag in tags:
             RecipeTag.objects.create(recipe=recipe, tag=tag)
@@ -98,7 +110,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'tags', 'author', 'ingredients',
+        fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited',
                   'name', 'image', 'text',
                   'cooking_time')
         read_only = ('id', )
