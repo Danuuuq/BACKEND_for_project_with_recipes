@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from core.models import Tag
 from .models import Ingredient, Recipe, RecipeIngredient, RecipeTag
+from users.serializers import UserSerializer
 
 
 class Base64ImageField(serializers.ImageField):
@@ -21,6 +22,7 @@ class Base64ImageField(serializers.ImageField):
 class BooleanAddField(serializers.RelatedField):
 
     def to_representation(self, value):
+        breakpoint()
         cur_user = self.context['request'].user
         if cur_user.is_anonymous:
             return False
@@ -48,8 +50,8 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    id = serializers.PrimaryKeyRelatedField(source='ingredient',
-                                            read_only=True)
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(),
+                                            source='ingredient')
     name = serializers.PrimaryKeyRelatedField(source='ingredient',
                                               read_only=True)
     measurement_unit = serializers.PrimaryKeyRelatedField(source='ingredient',
@@ -58,7 +60,6 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
-        # depth = 1
 
 
 class RecipeTagSerializer(serializers.ModelSerializer):
@@ -68,7 +69,6 @@ class RecipeTagSerializer(serializers.ModelSerializer):
         return super().to_representation(instance)
 
     def to_internal_value(self, data):
-        breakpoint()
         try:
             data = Tag.objects.get(id=data)
         except Tag.DoesNotExist:
@@ -83,14 +83,14 @@ class RecipeTagSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    is_favorited = BooleanAddField(read_only=True, source='save')
+    is_favorited = BooleanAddField(read_only=True, source='favorite')
     tags = RecipeTagSerializer(many=True, source='recipetag')
     ingredients = RecipeIngredientSerializer(many=True,
                                              source='recipeingredient')
-    # is_in_shopping_cart = BooleanAddField(read_only=True, source='purchase')
+    is_in_shopping_cart = BooleanAddField(read_only=True, source='purchase')
     image = Base64ImageField(required=True, allow_null=False)
-    author = serializers.SlugRelatedField(
-        slug_field='username',
+    author = UserSerializer(
+        # slug_field='username',
         read_only=True,
         default=serializers.CurrentUserDefault())
 
@@ -101,6 +101,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         for tag in tags:
             RecipeTag.objects.create(recipe=recipe, tag=tag)
         for ingredient_data in ingredients:
+            # breakpoint()
             ingredient = ingredient_data['ingredient']
             amount = ingredient_data['amount']
             RecipeIngredient.objects.create(recipe=recipe,
@@ -111,6 +112,6 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited',
-                  'name', 'image', 'text',
+                   'is_in_shopping_cart', 'name', 'image', 'text',
                   'cooking_time')
         read_only = ('id', )
