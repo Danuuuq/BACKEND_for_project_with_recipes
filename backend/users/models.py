@@ -15,7 +15,5 @@ class User(AbstractUser):
                                blank=True, default=None)
 
     class Meta:
-        # ordering = ('username', 'id')
         verbose_name = 'пользователь'
         verbose_name_plural = 'Пользователи'
-        # default_related_name = 'user'

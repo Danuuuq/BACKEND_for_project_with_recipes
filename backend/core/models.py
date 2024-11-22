@@ -24,6 +24,9 @@ class Follow(models.Model):
         verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
 
+    def __str__(self):
+        return f'{self.user} подписан на {self.following}'
+
 
 class Tag(models.Model):
     name = models.CharField('название', unique=True,
@@ -36,3 +39,6 @@ class Tag(models.Model):
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
         default_related_name = 'tag'
+
+    def __str__(self):
+        return self.name

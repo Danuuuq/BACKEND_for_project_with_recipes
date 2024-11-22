@@ -1,10 +1,11 @@
-from rest_framework import permissions, viewsets, response, status, views
+from rest_framework import permissions, viewsets, views
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework.reverse import reverse
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .serializers import TagSerializer, IngredientSerializer, RecipeSerializer, ShortLinkSerializer
+from .serializers import TagSerializer, IngredientSerializer, RecipeSerializer
 from core.models import Tag
 from .models import Ingredient, Recipe
 from .filters import RecipeFilter
@@ -37,26 +38,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
+    def get_permissions(self):
+        if self.action not in permissions.SAFE_METHODS:
+            return (permissions.IsAuthenticated(),)
+        return super().get_permissions()
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
     @action(methods=['get'], detail=True, url_path='get-link')
     def get_short_link(self, request, *args, **kwargs):
         short_link = self.get_object().short_url
-        data = {
-            'short-url': reverse('reverse-link', args=[short_link],
-                                 request=request)
-        }
+        data = {'short-url': reverse('reverse-link', args=[short_link],
+                                     request=request)}
         return Response(data)
 
-class ShortLinkView(views.APIView):
+
+class ShortLinkRedirectView(views.APIView):
     lookup_field = 'short_url'
+    permission_classes = (permissions.AllowAny,)
 
     def get(self, request, slug):
-        breakpoint()
-        try:
-            recipe = Recipe.objects.get(short_url=slug)
-        except:
-            return Response({'lol': 'bad'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'lol': 'good'}, status=status.HTTP_200_OK)
-        
+        recipe = get_object_or_404(Recipe, short_url=slug)
+        return redirect('api:recipe-detail', recipe.id)

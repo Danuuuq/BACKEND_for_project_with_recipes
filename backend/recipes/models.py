@@ -33,7 +33,10 @@ class Ingredient(models.Model):
         ordering = ('name', 'id')
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        default_related_name = 'ingredient'    
+        default_related_name = 'ingredient'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -66,6 +69,9 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
         default_related_name = 'recipes'
 
+    def __str__(self):
+        return self.name
+
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
@@ -92,6 +98,9 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = 'Ингридиенты рецептов'
         default_manager_name = 'published'
 
+    def __str__(self):
+        return f'{self.recipe} - {self.ingredient} - {self.amount} {self.ingredient.measurement_unit}'
+
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
@@ -109,6 +118,9 @@ class Favorite(models.Model):
         ordering = ('recipe', 'user')
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
+
+    def __str__(self):
+        return f'{self.recipe} - {self.user}'
 
 
 class RecipeTag(models.Model):
@@ -128,6 +140,9 @@ class RecipeTag(models.Model):
         verbose_name = 'тег рецепта'
         verbose_name_plural = 'Теги рецептов'
 
+    def __str__(self):
+        return f'{self.recipe} - {self.tag}'
+
 
 class PurchaseUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
@@ -145,3 +160,6 @@ class PurchaseUser(models.Model):
         ordering = ('purchase', 'user')
         verbose_name = 'покупки пользователя'
         verbose_name_plural = 'Покупки пользователей'
+
+    def __str__(self):
+        return f'{self.user} - {self.purchase}'
