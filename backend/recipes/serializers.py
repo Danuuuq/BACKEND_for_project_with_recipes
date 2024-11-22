@@ -22,7 +22,6 @@ class Base64ImageField(serializers.ImageField):
 class BooleanAddField(serializers.RelatedField):
 
     def to_representation(self, value):
-        breakpoint()
         cur_user = self.context['request'].user
         if cur_user.is_anonymous:
             return False
@@ -30,9 +29,6 @@ class BooleanAddField(serializers.RelatedField):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    
-    def to_representation(self, instance):
-        return super().to_representation(instance)
 
     class Meta:
         model = Tag
@@ -79,6 +75,7 @@ class RecipeTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'slug')
+        lookup_field = 'slug'
         read_only = ('id', 'name', 'slug')
 
 
@@ -101,7 +98,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         for tag in tags:
             RecipeTag.objects.create(recipe=recipe, tag=tag)
         for ingredient_data in ingredients:
-            # breakpoint()
             ingredient = ingredient_data['ingredient']
             amount = ingredient_data['amount']
             RecipeIngredient.objects.create(recipe=recipe,
@@ -112,6 +108,15 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited',
-                   'is_in_shopping_cart', 'name', 'image', 'text',
+                  'is_in_shopping_cart', 'name', 'image', 'text',
                   'cooking_time')
         read_only = ('id', )
+
+
+class ShortLinkSerializer(serializers.ModelSerializer):
+    
+    
+    class Meta:
+        model = Recipe
+        fields = ('short_url',)
+        read_only = ('short_url',)
