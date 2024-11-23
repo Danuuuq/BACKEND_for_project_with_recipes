@@ -39,6 +39,19 @@ class CustomUserViewSet(views.UserViewSet):
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(methods=['get'], detail=False)
+    def subscriptions(self, request, *args, **kwargs):
+        queryset = request.user.follower.all()
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = FollowSerializer(page, many=True,
+                                          context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = FollowSerializer(queryset, many=True)
+        return Response(serializer.data)
+
     @action(methods=['post'], detail=True, url_path='subscribe')
     def create_subscribe(self, request, *args, **kwargs):
         data_following = {'following': self.kwargs['id']}

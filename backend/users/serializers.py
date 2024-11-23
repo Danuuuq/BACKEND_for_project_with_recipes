@@ -68,10 +68,12 @@ class UserFollowSerializer(serializers.ModelSerializer):
     recipes_count = serializers.SerializerMethodField()
 
     def get_recipes(self, obj):
+        if self.context['request'].query_params.get('recipes_limit') is None:
+            return RecipeFollowSerializer(obj.recipes.all(), many=True).data
         limit = int(self.context['request'].query_params['recipes_limit'])
         return RecipeFollowSerializer(
             obj.recipes.all()[:limit], many=True).data
-    
+
     def get_recipes_count(self, obj):
         return obj.recipes.all().count()
 
