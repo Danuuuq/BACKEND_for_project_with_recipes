@@ -40,6 +40,18 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+
+    # @staticmethod
+    def create_short_link():
+        not_unique = True
+        while not_unique:
+            short_url = ''.join(
+                random.choices(settings.SYMBOLS_FOR_SHORT_URL,
+                               k=settings.MAX_LENGTH_SHORT_URL))
+            if not Recipe.objects.filter(short_url=short_url).exists():
+                not_unique = False
+        return short_url
+
     name = models.CharField('название',
                             max_length=settings.MAX_LENGTH_NAME_RECIPE)
     text = models.TextField('описание', null=False, blank=False)
@@ -50,18 +62,10 @@ class Recipe(models.Model):
     cooking_time = models.IntegerField('время готовки',
                                        validators=[MinValueValidator(1)])
     ingredient = models.ManyToManyField(Ingredient, through='RecipeIngredient')
-    short_url = models.CharField('Короткая ссылка', auto_created=True,
+    short_url = models.CharField('Короткая ссылка', editable=False, unique=True,
+                                 default=create_short_link,
                                  max_length=settings.MAX_LENGTH_SHORT_URL)
     tag = models.ManyToManyField(Tag, through='RecipeTag')
-
-    def save(self, *args, **kwargs):
-        while True:
-            self.short_url = ''.join(
-                random.choices(settings.SYMBOLS_FOR_SHORT_URL,
-                               k=settings.MAX_LENGTH_SHORT_URL))
-            if not Recipe.objects.filter(short_url=self.short_url).exists():
-                break
-        super(Recipe, self).save(*args, **kwargs)
 
     class Meta:
         ordering = ('name', 'id')

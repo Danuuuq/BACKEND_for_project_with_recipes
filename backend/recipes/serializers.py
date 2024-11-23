@@ -95,22 +95,36 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only=True,
         default=serializers.CurrentUserDefault())
 
+    def validate(self, attrs):
+        if 'recipetag' not in attrs:
+            raise serializers.ValidationError(
+                {'tags': 'Обязательное поле.'})
+        if 'recipeingredient' not in attrs:
+            raise serializers.ValidationError(
+                {'ingredients': 'Обязательное поле.'})
+        return super().validate(attrs)
+
     def validate_ingredients(self, attrs):
-        if len(attrs) == 0:
-            raise serializers.ValidationError('Обязательное поле.')
+        copy_attrs = attrs.copy()
+        for _ in range(len(copy_attrs) - 1):
+            cur = copy_attrs.pop()['ingredient']
+            for copy_attr in copy_attrs:
+                if cur == copy_attr['ingredient']:
+                    raise serializers.ValidationError(
+                        'Присутствуют повторяющиеся ингредиенты')
         return super().validate(attrs)
 
     def validate_tags(self, attrs):
-        if len(attrs) == 0:
-            raise serializers.ValidationError('Обязательное поле.')
+        copy_attrs = attrs.copy()
+        for _ in range(len(copy_attrs) - 1):
+            cur = copy_attrs.pop()
+            if cur in copy_attrs:
+                raise serializers.ValidationError(
+                    'Присутствуют повторяющиеся теги')
         return super().validate(attrs)
 
-    def update(self, instance, validated_data):
-        tags = validated_data.pop('recipetag')
-        ingredients = validated_data.pop('recipeingredient')
-        Recipe.objects.update(**validated_data)
-        RecipeTag.objects.filter(recipe=instance).delete()
-        RecipeIngredient.objects.filter(recipe=instance).delete()
+    @staticmethod
+    def related_data_create(instance, tags, ingredients):
         for tag in tags:
             RecipeTag.objects.create(recipe=instance, tag=tag)
         for ingredient_data in ingredients:
@@ -119,24 +133,23 @@ class RecipeSerializer(serializers.ModelSerializer):
             RecipeIngredient.objects.create(recipe=instance,
                                             ingredient=ingredient,
                                             amount=amount)
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop('recipetag')
+        ingredients = validated_data.pop('recipeingredient')
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        instance.recipeingredient.all().delete()
+        instance.recipetag.all().delete()
+        self.related_data_create(instance, tags, ingredients)
         return instance
 
     def create(self, validated_data):
         tags = validated_data.pop('recipetag')
         ingredients = validated_data.pop('recipeingredient')
-        try:
-            recipe = Recipe.objects.create(**validated_data)
-            for tag in tags:
-                RecipeTag.objects.create(recipe=recipe, tag=tag)
-            for ingredient_data in ingredients:
-                ingredient = ingredient_data['ingredient']
-                amount = ingredient_data['amount']
-                RecipeIngredient.objects.create(recipe=recipe,
-                                                ingredient=ingredient,
-                                                amount=amount)
-        except IntegrityError:
-            raise exceptions.ValidationError(
-                'Комбинации рецепт-ингредиент или рецепт-тег не уникальны.')
+        recipe = Recipe.objects.create(**validated_data)
+        self.related_data_create(recipe, tags, ingredients)
         return recipe
 
     class Meta:

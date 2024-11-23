@@ -9,6 +9,7 @@ from .serializers import TagSerializer, IngredientSerializer, RecipeSerializer
 from core.models import Tag
 from .models import Ingredient, Recipe
 from .filters import RecipeFilter
+from .permissions import OwnerOrReadOnly
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -39,8 +40,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_permissions(self):
-        if self.action not in permissions.SAFE_METHODS:
-            return (permissions.IsAuthenticated(),)
+        if self.action not in ['list', 'retrieve', 'get_short_link']:
+            return (OwnerOrReadOnly(),)
         return super().get_permissions()
 
     def perform_create(self, serializer):

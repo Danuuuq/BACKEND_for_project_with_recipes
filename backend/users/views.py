@@ -10,13 +10,18 @@ from recipes.models import User
 
 
 class CustomUserViewSet(views.UserViewSet):
-    queryset = User.objects.prefetch_related('follower').all()
+    queryset = User.objects.prefetch_related('follower', 'recipes').all()
 
     def get_permissions(self):
         if (self.action in settings.ACTION_FOR_USER
             and self.request.user.is_anonymous):
             return (permissions.IsAuthenticated(),)
         return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.action in ['create_subscribe', 'delete_subscribe']:
+            return FollowSerializer
+        return super().get_serializer_class()
 
     @action(methods=['put'], detail=False, url_path='me/avatar')
     def update_avatar(self, request, *args, **kwargs):
@@ -34,8 +39,7 @@ class CustomUserViewSet(views.UserViewSet):
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['post'], detail=True, url_path='subscribe',
-            serializer_class=FollowSerializer)
+    @action(methods=['post'], detail=True, url_path='subscribe')
     def create_subscribe(self, request, *args, **kwargs):
         data_following = {'following': self.kwargs['id']}
         serializer = FollowSerializer(data=data_following,

@@ -6,6 +6,7 @@ from rest_framework import serializers, validators
 
 from users.models import User
 from core.models import Follow
+from recipes.models import Recipe
 
 
 class Base64ImageField(serializers.ImageField):
@@ -54,7 +55,34 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         read_only = ('id', )
 
 
-class FollowSerializer(serializers.ModelSerializer):
+class RecipeFollowSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class UserFollowSerializer(serializers.ModelSerializer):
+    is_subscribed = FollowFields(read_only=True, source='following')
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    def get_recipes(self, obj):
+        limit = int(self.context['request'].query_params['recipes_limit'])
+        return RecipeFollowSerializer(
+            obj.recipes.all()[:limit], many=True).data
+    
+    def get_recipes_count(self, obj):
+        return obj.recipes.all().count()
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+        read_only = ('id', 'avatar')
+
+
+class FollowSerializer(UserSerializer):
     user = serializers.SlugRelatedField(
         slug_field='id',
         read_only=True,
@@ -64,6 +92,11 @@ class FollowSerializer(serializers.ModelSerializer):
         slug_field='id',
         required=True
     )
+
+    def to_representation(self, instance):
+        user_data = UserFollowSerializer(instance.following,
+                                         context=self.context).data
+        return user_data
 
     def validate(self, data):
         if self.context['request'].user == data['following']:
