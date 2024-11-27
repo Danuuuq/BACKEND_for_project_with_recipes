@@ -28,17 +28,9 @@ class AvatarSerializer(serializers.ModelSerializer):
         fields = ('avatar',)
 
 
-class FollowFields(serializers.RelatedField):
-
-    def to_representation(self, value):
-        cur_user = self.context['request'].user
-        if cur_user.is_anonymous:
-            return False
-        return value.filter(user=cur_user).exists()
-
-
 class UserSerializer(serializers.ModelSerializer):
-    is_subscribed = FollowFields(read_only=True, source='following')
+    is_subscribed = serializers.BooleanField(read_only=True,
+                                             default=False)
 
     class Meta:
         model = User
@@ -63,9 +55,9 @@ class RecipeFollowSerializer(serializers.ModelSerializer):
 
 
 class UserFollowSerializer(serializers.ModelSerializer):
-    is_subscribed = FollowFields(read_only=True, source='following')
+    is_subscribed = serializers.BooleanField(read_only=True)
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(read_only=True)
 
     def get_recipes(self, obj):
         if self.context['request'].query_params.get('recipes_limit') is None:
@@ -73,9 +65,6 @@ class UserFollowSerializer(serializers.ModelSerializer):
         limit = int(self.context['request'].query_params['recipes_limit'])
         return RecipeFollowSerializer(
             obj.recipes.all()[:limit], many=True).data
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.all().count()
 
     class Meta:
         model = User
@@ -89,16 +78,6 @@ class FollowSerializer(UserSerializer):
         slug_field='id',
         read_only=True,
         default=serializers.CurrentUserDefault())
-    following = serializers.SlugRelatedField(
-        queryset=User.objects.all(),
-        slug_field='id',
-        required=True
-    )
-
-    def to_representation(self, instance):
-        user_data = UserFollowSerializer(instance.following,
-                                         context=self.context).data
-        return user_data
 
     def validate(self, data):
         if self.context['request'].user == data['following']:
@@ -108,8 +87,8 @@ class FollowSerializer(UserSerializer):
 
     class Meta:
         model = Follow
-        fields = ('user', 'following',)
-        read_only = ('user',)
+        fields = ('user', 'following')
+        read_only = ('user', 'following')
 
         validators = [
             validators.UniqueTogetherValidator(

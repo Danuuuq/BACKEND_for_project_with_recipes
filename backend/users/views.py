@@ -1,16 +1,27 @@
+from djoser import views
+from django.conf import settings
+from django.db.models import Count, Value, BooleanField
+from django.shortcuts import get_object_or_404
 from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from djoser import views
-from django.conf import settings
-from django.shortcuts import get_object_or_404
 
-from users.serializers import AvatarSerializer, FollowSerializer
+from users.serializers import (AvatarSerializer, FollowSerializer,
+                               UserFollowSerializer)
 from recipes.models import User
 
 
 class CustomUserViewSet(views.UserViewSet):
-    queryset = User.objects.prefetch_related('follower', 'recipes').all()
+    queryset = User.objects.with_related_data()
+
+    def get_queryset(self):
+        if self.request.user.is_anonymous:
+            queryset = self.queryset.annotate(
+                is_subscribed=Value(False, output_field=BooleanField()))
+            return queryset
+        queryset = self.queryset.is_subscribe(self.request.user)
+        queryset = queryset.annotate(recipes_count=Count('recipes'))
+        return queryset
 
     def get_permissions(self):
         if (self.action in settings.ACTION_FOR_USER
@@ -41,25 +52,28 @@ class CustomUserViewSet(views.UserViewSet):
 
     @action(methods=['get'], detail=False)
     def subscriptions(self, request, *args, **kwargs):
-        queryset = request.user.follower.all()
+        queryset = self.get_queryset().filter(is_subscribed=True)
         page = self.paginate_queryset(queryset)
 
         if page is not None:
-            serializer = FollowSerializer(page, many=True,
-                                          context={'request': request})
+            serializer = UserFollowSerializer(page, many=True,
+                                              context={'request': request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = FollowSerializer(queryset, many=True)
+        serializer = UserFollowSerializer(queryset, many=True)
         return Response(serializer.data)
 
     @action(methods=['post'], detail=True, url_path='subscribe')
     def create_subscribe(self, request, *args, **kwargs):
-        data_following = {'following': self.kwargs['id']}
-        serializer = FollowSerializer(data=data_following,
+        following = self.get_object()
+        data = {'following': following.id}
+        serializer = FollowSerializer(data=data,
                                       context={'request': request})
         if serializer.is_valid():
-            serializer.save(user=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer.save(user=self.request.user, following=following)
+            user_data = UserFollowSerializer(self.get_object(),
+                                             context={'request': request}).data
+            return Response(user_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @create_subscribe.mapping.delete

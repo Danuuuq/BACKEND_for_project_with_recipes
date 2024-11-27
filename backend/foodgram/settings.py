@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
     'rest_framework',
     'django_filters',
     'rest_framework.authtoken',
@@ -36,6 +37,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+]
+
+# For DEBUG, delete before deploy
+INTERNAL_IPS = [
+    '192.168.1.180',
 ]
 
 ROOT_URLCONF = 'foodgram.urls'
@@ -152,6 +159,9 @@ MAX_LENGTH_NAME_INGREDIENT = 128
 MAX_LENGTH_MEASUREMENT_UNIT = 64
 
 ACTION_FOR_USER = ['me', 'update_avatar', 'subscriptions', 'delete_avatar',
-                   'create_subscribe', 'delete_subscribe']
+                   'create_subscribe', 'delete_subscribe', 'add_favorite',
+                   'delete_favorite']
+
+SAFE_ACTION_FOR_RECIPE = ['list', 'retrieve', 'get_short_link']
 
 SYMBOLS_FOR_SHORT_URL = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'

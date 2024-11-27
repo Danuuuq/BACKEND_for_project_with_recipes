@@ -17,7 +17,7 @@ class IngredientQuerySet(models.QuerySet):
 
 
 class IngredientManager(models.Manager):
-    
+
     def get_queryset(self):
         return IngredientQuerySet(self.model).with_related_data()
 
@@ -41,7 +41,7 @@ class Ingredient(models.Model):
 
 class Recipe(models.Model):
 
-    # @staticmethod
+    @staticmethod
     def create_short_link():
         not_unique = True
         while not_unique:

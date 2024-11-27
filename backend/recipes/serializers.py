@@ -1,13 +1,13 @@
 import base64
 
 from django.core.files.base import ContentFile
-from django.db import IntegrityError
-from rest_framework import serializers, exceptions
+from rest_framework import serializers, validators
 from rest_framework.validators import UniqueTogetherValidator
 
 from core.models import Tag
-from .models import Ingredient, Recipe, RecipeIngredient, RecipeTag
-from users.serializers import UserSerializer
+from .models import (Ingredient, Recipe, RecipeIngredient,
+                     RecipeTag, PurchaseUser, Favorite)
+from users.serializers import UserSerializer, RecipeFollowSerializer
 
 
 class Base64ImageField(serializers.ImageField):
@@ -19,15 +19,6 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
-
-
-class BooleanAddField(serializers.RelatedField):
-
-    def to_representation(self, value):
-        cur_user = self.context['request'].user
-        if cur_user.is_anonymous:
-            return False
-        return value.filter(user=cur_user).exists()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -84,22 +75,24 @@ class RecipeTagSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    is_favorited = BooleanAddField(read_only=True, source='favorite')
+    is_favorited = serializers.BooleanField(read_only=True, default=False)
     tags = RecipeTagSerializer(many=True, source='recipetag', required=True)
     ingredients = RecipeIngredientSerializer(many=True,
                                              source='recipeingredient',
                                              required=True)
-    is_in_shopping_cart = BooleanAddField(read_only=True, source='purchase')
+    is_in_shopping_cart = serializers.BooleanField(
+        read_only=True, default=False)
     image = Base64ImageField(required=True, allow_null=False)
     author = UserSerializer(
-        read_only=True,
-        default=serializers.CurrentUserDefault())
+        read_only=True, default=serializers.CurrentUserDefault())
 
     def validate(self, attrs):
-        if 'recipetag' not in attrs:
+        if ('recipetag' not in attrs
+            or len(attrs.get('recipetag')) == 0):
             raise serializers.ValidationError(
                 {'tags': 'Обязательное поле.'})
-        if 'recipeingredient' not in attrs:
+        if ('recipeingredient' not in attrs
+            or len(attrs.get('recipeingredient')) == 0):
             raise serializers.ValidationError(
                 {'ingredients': 'Обязательное поле.'})
         return super().validate(attrs)
@@ -157,7 +150,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited',
                   'is_in_shopping_cart', 'name', 'image', 'text',
                   'cooking_time')
-        read_only = ('id', )
+        read_only = ('id', 'author')
 
         validators = [
             UniqueTogetherValidator(
@@ -165,3 +158,64 @@ class RecipeSerializer(serializers.ModelSerializer):
                 fields=('name', 'author')
             ),
         ]
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(
+        slug_field='id',
+        read_only=True,
+        default=serializers.CurrentUserDefault())
+    purchase = serializers.SlugRelatedField(
+        queryset=Recipe.objects.all(),
+        slug_field='id',
+        required=True
+    )
+
+    def to_representation(self, instance):
+        recipe_data = RecipeFollowSerializer(instance.purchase,
+                                             context=self.context).data
+        return recipe_data
+
+    class Meta:
+        model = PurchaseUser
+        fields = ('user', 'purchase')
+        read_only = ('user',)
+
+        validators = [
+            validators.UniqueTogetherValidator(
+                queryset=PurchaseUser.objects.all(),
+                fields=('user', 'purchase'),
+                message='Рецепт уже добавлен в покупки.'
+            )
+        ]
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(
+        slug_field='id',
+        read_only=True,
+        default=serializers.CurrentUserDefault())
+    recipe = serializers.SlugRelatedField(
+        queryset=Recipe.objects.all(),
+        slug_field='id',
+        required=True
+    )
+
+    def to_representation(self, instance):
+        recipe_data = RecipeFollowSerializer(instance.recipe,
+                                             context=self.context).data
+        return recipe_data
+
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe')
+        read_only = ('user',)
+
+        validators = [
+            validators.UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=('user', 'recipe'),
+                message='Рецепт уже добавлен в избранное.'
+            )
+        ]
+
