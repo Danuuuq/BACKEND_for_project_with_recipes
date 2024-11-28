@@ -66,8 +66,8 @@ class Recipe(models.Model):
     cooking_time = models.IntegerField('время готовки',
                                        validators=[MinValueValidator(1)])
     ingredient = models.ManyToManyField(Ingredient, through='RecipeIngredient')
-    short_url = models.CharField('Короткая ссылка', editable=False, unique=True,
-                                 default=create_short_link,
+    short_url = models.CharField('Короткая ссылка', editable=False,
+                                 unique=True, default=create_short_link,
                                  max_length=settings.MAX_LENGTH_SHORT_URL)
     tag = models.ManyToManyField(Tag, through='RecipeTag')
 
@@ -112,7 +112,7 @@ class RecipeIngredient(models.Model):
 
     def __str__(self):
         return (
-            f'{self.recipe}: {self.ingredient} - {self.amount}' 
+            f'{self.recipe}: {self.ingredient} - {self.amount}'
             f'{self.ingredient.measurement_unit}')
 
 
@@ -162,7 +162,8 @@ class PurchaseUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='buyer', verbose_name='пользователь')
     purchase = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                                 related_name='purchase', verbose_name='рецепт')
+                                 related_name='purchase',
+                                 verbose_name='рецепт')
 
     class Meta:
         constraints = [

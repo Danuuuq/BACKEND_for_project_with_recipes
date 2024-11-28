@@ -89,8 +89,10 @@ class RecipeSerializer(serializers.ModelSerializer):
                 {error_field: 'Обязательное поле.'})
 
     def validate(self, attrs):
-        self._validate_non_empty_field(attrs, 'recipetag', 'tags')
-        self._validate_non_empty_field(attrs, 'recipeingredient', 'ingredients')
+        self._validate_non_empty_field(attrs,
+                                       'recipetag', 'tags')
+        self._validate_non_empty_field(attrs,
+                                       'recipeingredient', 'ingredients')
         return super().validate(attrs)
 
     def _validate_unique_items(self, attrs, field, error_field):
