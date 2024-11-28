@@ -1,10 +1,13 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-qyi*9n=^(k*tqp0*=fx81mk#xt)_f$2%=^&y#q-$2p3l^hy_)1'
+# SECRET_KEY = 'django-insecure-qyi*9n=^(k*tqp0*=fx81mk#xt)_f$2%=^&y#q-$2p3l^hy_)1'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = True
+# DEBUG = True
+DEBUG = os.getenv('DEBUG') == 'True'
 
 ALLOWED_HOSTS = ['192.168.1.93', '188.242.167.244', '127.0.0.1']
 
@@ -25,7 +28,6 @@ INSTALLED_APPS = [
     'recipes.apps.RecipesConfig',
     'users.apps.UsersConfig',
     'api.apps.ApiConfig',
-    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -61,10 +63,20 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 # Database
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'django'),
+        'USER': os.getenv('POSTGRES_USER', 'django'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', 5432)
     }
 }
 
@@ -98,7 +110,7 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 5,
+    'PAGE_SIZE': 6,
 }
 
 DJOSER = {
@@ -131,11 +143,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'collected_static'
 
 # Media files (Image for recipes and avatar)
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = '/media'
 
 # Default primary key field type
 
