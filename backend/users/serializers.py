@@ -4,8 +4,7 @@ from django.core.files.base import ContentFile
 from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers, validators
 
-from users.models import User
-from core.models import Follow
+from users.models import User, Follow
 from recipes.models import Recipe
 
 
@@ -60,9 +59,8 @@ class UserFollowSerializer(serializers.ModelSerializer):
     recipes_count = serializers.IntegerField(read_only=True)
 
     def get_recipes(self, obj):
-        if self.context['request'].query_params.get('recipes_limit') is None:
-            return RecipeFollowSerializer(obj.recipes.all(), many=True).data
-        limit = int(self.context['request'].query_params['recipes_limit'])
+        rec_limit = self.context['request'].query_params.get('recipes_limit')
+        limit = None if rec_limit is None else int(rec_limit)
         return RecipeFollowSerializer(
             obj.recipes.all()[:limit], many=True).data
 

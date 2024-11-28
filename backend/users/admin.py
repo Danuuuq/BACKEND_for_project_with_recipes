@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import User
-from core.models import Follow
+from .models import User, Follow
 
 
 class FollowInline(admin.TabularInline):
@@ -18,3 +17,4 @@ class UserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(User, UserAdmin)
+admin.site.register(Follow)

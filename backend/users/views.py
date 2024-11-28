@@ -8,24 +8,22 @@ from rest_framework.response import Response
 
 from users.serializers import (AvatarSerializer, FollowSerializer,
                                UserFollowSerializer)
-from recipes.models import User
+from .models import User
 
 
 class CustomUserViewSet(views.UserViewSet):
     queryset = User.objects.with_related_data()
 
     def get_queryset(self):
+        queryset = self.queryset
         if self.request.user.is_anonymous:
-            queryset = self.queryset.annotate(
+            return queryset.annotate(
                 is_subscribed=Value(False, output_field=BooleanField()))
-            return queryset
-        queryset = self.queryset.is_subscribe(self.request.user)
-        queryset = queryset.annotate(recipes_count=Count('recipes'))
-        return queryset
+        return queryset.is_subscribe(self.request.user).annotate(
+            recipes_count=Count('recipes'))
 
     def get_permissions(self):
-        if (self.action in settings.ACTION_FOR_USER
-            and self.request.user.is_anonymous):
+        if self.action in settings.ACTION_FOR_USER:
             return (permissions.IsAuthenticated(),)
         return super().get_permissions()
 
@@ -34,21 +32,20 @@ class CustomUserViewSet(views.UserViewSet):
             return FollowSerializer
         return super().get_serializer_class()
 
-    @action(methods=['put'], detail=False, url_path='me/avatar')
+    @action(methods=['put', 'delete'], detail=False, url_path='me/avatar')
     def update_avatar(self, request, *args, **kwargs):
         user = request.user
-        serializer = AvatarSerializer(user, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @update_avatar.mapping.delete
-    def delete_avatar(self, request, *args, **kwargs):
-        user = request.user
-        user.avatar = None
-        user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(user, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        if request.method == 'DELETE':
+            user.avatar = None
+            user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['get'], detail=False)
     def subscriptions(self, request, *args, **kwargs):

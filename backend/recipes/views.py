@@ -1,6 +1,5 @@
 from rest_framework import permissions, viewsets, views, status
-from django.db.models import Exists, OuterRef, BooleanField, Prefetch, Value
-from django.http import FileResponse
+from django.db.models import BooleanField, Prefetch, Value
 from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect
 from rest_framework.reverse import reverse
@@ -11,8 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import (
     TagSerializer, IngredientSerializer, RecipeSerializer,
     ShoppingCartSerializer, FavoriteSerializer)
-from core.models import Tag
-from .models import Ingredient, Recipe, User
+from .models import Ingredient, Recipe, User, Tag
 from .filters import RecipeFilter
 from .permissions import OwnerOrReadOnly
 from .utils import create_shopping_cart
@@ -38,31 +36,27 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     model = Recipe
-    queryset = Recipe.objects.prefetch_related('recipetag',
-                                               'recipeingredient').all()
+    queryset = Recipe.tags_and_ingredients
     serializer_class = RecipeSerializer
     permission_classes = (permissions.AllowAny,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        if self.request.user.is_anonymous:
-            queryset = self.queryset.annotate(
+        queryset = self.queryset
+        user = self.request.user
+        if user.is_anonymous:
+            return queryset.annotate(
                 is_favorited=Value(False, output_field=BooleanField()),
                 is_in_shopping_cart=Value(False, output_field=BooleanField())
             )
-            return queryset
-        favorite = self.request.user.saver.filter(recipe=OuterRef('pk'))
-        shopping_cart = self.request.user.buyer.filter(purchase=OuterRef('pk'))
-        queryset = self.queryset.annotate(is_favorited=Exists(favorite),
-                                          is_in_shopping_cart=Exists(
-                                              shopping_cart))
-        queryset = queryset.prefetch_related(Prefetch(
-            'author', queryset=User.objects.is_subscribe(self.request.user)))
-        return queryset
+        return (queryset.all().is_favorite_and_shop_cart(user)
+                .prefetch_related(Prefetch(
+                    'author', queryset=User.objects.is_subscribe(
+                        self.request.user))))
 
     def get_permissions(self):
-        if self.action in ['delete_shopping_cart', 'delete_favorite']:
+        if self.action in ['shopping_cart', 'favorite']:
             return (permissions.IsAuthenticated(),)
         if self.action not in settings.SAFE_ACTION_FOR_RECIPE:
             return (OwnerOrReadOnly(),)
@@ -77,42 +71,41 @@ class RecipeViewSet(viewsets.ModelViewSet):
         data = {'short-url': reverse('reverse-link', args=[short_link],
                                      request=request)}
         return Response(data)
-    
-    @action(methods=['post'], detail=True, url_path='shopping_cart')
-    def add_shopping_cart(self, request, *args, **kwargs):
-        data_following = {'purchase': self.kwargs['pk']}
-        serializer = ShoppingCartSerializer(data=data_following,
-                                            context={'request': request})
-        if serializer.is_valid():
-            serializer.save(user=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @add_shopping_cart.mapping.delete
-    def delete_shopping_cart(self, request, *args, **kwargs):
+    def create_or_delete_for_action(self, serializer_class, related_name,
+                                    instance_name, request, *args, **kwargs):
         user = self.request.user
-        purchases = get_object_or_404(self.get_object().purchase.all(),
-                                      user=user)
-        self.perform_destroy(purchases)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-    @action(methods=['post'], detail=True, url_path='favorite')
-    def add_favorite(self, request, *args, **kwargs):
-        data_following = {'recipe': self.kwargs['pk']}
-        serializer = FavoriteSerializer(data=data_following,
-                                        context={'request': request})
-        if serializer.is_valid():
-            serializer.save(user=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = {instance_name: self.kwargs['pk']}
 
-    @add_favorite.mapping.delete
-    def delete_favorite(self, request, *args, **kwargs):
-        user = self.request.user
-        favorite = get_object_or_404(self.get_object().favorite.all(),
-                                     user=user)
-        self.perform_destroy(favorite)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == 'POST':
+            serializer = serializer_class(data=data,
+                                          context={'request': request})
+            if serializer.is_valid():
+                serializer.save(user=user)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == 'DELETE':
+            instance = get_object_or_404(
+                getattr(self.get_object(), related_name).all(), user=user)
+            self.perform_destroy(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['post', 'delete'], detail=True)
+    def shopping_cart(self, request, *args, **kwargs):
+        return self.create_or_delete_for_action(
+            ShoppingCartSerializer, 'purchase',
+            'purchase', request, *args, **kwargs
+        )
+
+    @action(methods=['post', 'delete'], detail=True)
+    def favorite(self, request, *args, **kwargs):
+        return self.create_or_delete_for_action(
+            FavoriteSerializer, 'favorite',
+            'recipe', request, *args, **kwargs
+        )
 
     @action(methods=['get'], detail=False)
     def download_shopping_cart(self, request, *args, **kwargs):

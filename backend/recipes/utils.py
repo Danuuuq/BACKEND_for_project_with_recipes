@@ -21,7 +21,7 @@ def create_shopping_cart(user):
         line = (
             f'{ingredient.name}: {ingredient.total_amount}'
             f'{ingredient.measurement_unit}'
-            ' | Добавлено в корзину: [ ]\n')
+            ' | Куплено: [ ]\n')
         lines.append(line)
 
     response.writelines(lines)

@@ -5,21 +5,10 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from core.models import Tag
+from .managers import (IngredientManager, IngredientQuerySet,
+                       RecipeManager, RecipeQuerySet)
 
 User = get_user_model()
-
-
-class IngredientQuerySet(models.QuerySet):
-
-    def with_related_data(self):
-        return self.prefetch_related('ingredient')
-
-
-class IngredientManager(models.Manager):
-
-    def get_queryset(self):
-        return IngredientQuerySet(self.model).with_related_data()
 
 
 class Ingredient(models.Model):
@@ -39,9 +28,24 @@ class Ingredient(models.Model):
         return self.name
 
 
+class Tag(models.Model):
+    name = models.CharField('название', unique=True,
+                            max_length=settings.MAX_LENGTH_TAG)
+    slug = models.SlugField('slug название', unique=True,
+                            max_length=settings.MAX_LENGTH_TAG)
+
+    class Meta:
+        ordering = ('name', 'id')
+        verbose_name = 'тег'
+        verbose_name_plural = 'Теги'
+        default_related_name = 'tag'
+
+    def __str__(self):
+        return self.name
+
+
 class Recipe(models.Model):
 
-    @staticmethod
     def create_short_link():
         not_unique = True
         while not_unique:
@@ -67,11 +71,15 @@ class Recipe(models.Model):
                                  max_length=settings.MAX_LENGTH_SHORT_URL)
     tag = models.ManyToManyField(Tag, through='RecipeTag')
 
+    objects = RecipeQuerySet.as_manager()
+    tags_and_ingredients = RecipeManager()
+
     class Meta:
         ordering = ('name', 'id')
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
         default_related_name = 'recipes'
+        default_manager_name = 'tags_and_ingredients'
 
     def __str__(self):
         return self.name
@@ -88,7 +96,7 @@ class RecipeIngredient(models.Model):
                                  validators=[MinValueValidator(1)])
 
     objects = IngredientQuerySet.as_manager()
-    published = IngredientManager()
+    names_ingredients = IngredientManager()
 
     class Meta:
         constraints = [
@@ -100,10 +108,12 @@ class RecipeIngredient(models.Model):
         ordering = ('recipe', 'ingredient')
         verbose_name = 'ингридиенты рецепта'
         verbose_name_plural = 'Ингридиенты рецептов'
-        default_manager_name = 'published'
+        default_manager_name = 'names_ingredients'
 
     def __str__(self):
-        return f'{self.recipe} - {self.ingredient} - {self.amount} {self.ingredient.measurement_unit}'
+        return (
+            f'{self.recipe}: {self.ingredient} - {self.amount}' 
+            f'{self.ingredient.measurement_unit}')
 
 
 class Favorite(models.Model):

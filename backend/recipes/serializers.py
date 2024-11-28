@@ -2,11 +2,9 @@ import base64
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers, validators
-from rest_framework.validators import UniqueTogetherValidator
 
-from core.models import Tag
 from .models import (Ingredient, Recipe, RecipeIngredient,
-                     RecipeTag, PurchaseUser, Favorite)
+                     RecipeTag, PurchaseUser, Favorite, Tag)
 from users.serializers import UserSerializer, RecipeFollowSerializer
 
 
@@ -15,7 +13,6 @@ class Base64ImageField(serializers.ImageField):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
             ext = format.split('/')[-1]
-
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
@@ -86,46 +83,45 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = UserSerializer(
         read_only=True, default=serializers.CurrentUserDefault())
 
+    def _validate_non_empty_field(self, attrs, field, error_field):
+        if field not in attrs or len(attrs.get(field)) == 0:
+            raise serializers.ValidationError(
+                {error_field: 'Обязательное поле.'})
+
     def validate(self, attrs):
-        if ('recipetag' not in attrs
-            or len(attrs.get('recipetag')) == 0):
-            raise serializers.ValidationError(
-                {'tags': 'Обязательное поле.'})
-        if ('recipeingredient' not in attrs
-            or len(attrs.get('recipeingredient')) == 0):
-            raise serializers.ValidationError(
-                {'ingredients': 'Обязательное поле.'})
+        self._validate_non_empty_field(attrs, 'recipetag', 'tags')
+        self._validate_non_empty_field(attrs, 'recipeingredient', 'ingredients')
         return super().validate(attrs)
 
+    def _validate_unique_items(self, attrs, field, error_field):
+        if field == 'ingredient':
+            items = [item['ingredient'] for item in attrs]
+        else:
+            items = attrs
+        if len(items) != len(set(items)):
+            raise serializers.ValidationError(error_field)
+
     def validate_ingredients(self, attrs):
-        copy_attrs = attrs.copy()
-        for _ in range(len(copy_attrs) - 1):
-            cur = copy_attrs.pop()['ingredient']
-            for copy_attr in copy_attrs:
-                if cur == copy_attr['ingredient']:
-                    raise serializers.ValidationError(
-                        'Присутствуют повторяющиеся ингредиенты')
+        self._validate_unique_items(attrs, 'ingredient',
+                                    'Присутствуют повторяющиеся ингредиенты')
         return super().validate(attrs)
 
     def validate_tags(self, attrs):
-        copy_attrs = attrs.copy()
-        for _ in range(len(copy_attrs) - 1):
-            cur = copy_attrs.pop()
-            if cur in copy_attrs:
-                raise serializers.ValidationError(
-                    'Присутствуют повторяющиеся теги')
+        self._validate_unique_items(attrs, 'tag',
+                                    'Присутствуют повторяющиеся теги')
         return super().validate(attrs)
 
     @staticmethod
-    def related_data_create(instance, tags, ingredients):
-        for tag in tags:
-            RecipeTag.objects.create(recipe=instance, tag=tag)
-        for ingredient_data in ingredients:
-            ingredient = ingredient_data['ingredient']
-            amount = ingredient_data['amount']
-            RecipeIngredient.objects.create(recipe=instance,
-                                            ingredient=ingredient,
-                                            amount=amount)
+    def _related_data_save(instance, tags, ingredients):
+        RecipeTag.objects.bulk_create(
+            [RecipeTag(recipe=instance, tag=tag) for tag in tags])
+        RecipeIngredient.objects.bulk_create([
+            RecipeIngredient(
+                recipe=instance,
+                ingredient=ingredient['ingredient'],
+                amount=ingredient['amount'])
+            for ingredient in ingredients
+        ])
 
     def update(self, instance, validated_data):
         tags = validated_data.pop('recipetag')
@@ -135,14 +131,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.save()
         instance.recipeingredient.all().delete()
         instance.recipetag.all().delete()
-        self.related_data_create(instance, tags, ingredients)
+        self._related_data_save(instance, tags, ingredients)
         return instance
 
     def create(self, validated_data):
         tags = validated_data.pop('recipetag')
         ingredients = validated_data.pop('recipeingredient')
         recipe = Recipe.objects.create(**validated_data)
-        self.related_data_create(recipe, tags, ingredients)
+        self._related_data_save(recipe, tags, ingredients)
         return recipe
 
     class Meta:
@@ -153,14 +149,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only = ('id', 'author')
 
         validators = [
-            UniqueTogetherValidator(
+            validators.UniqueTogetherValidator(
                 queryset=Recipe.objects.all(),
                 fields=('name', 'author')
             ),
         ]
 
 
-class ShoppingCartSerializer(serializers.ModelSerializer):
+class BaseActionSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(
         slug_field='id',
         read_only=True,
@@ -170,6 +166,12 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         slug_field='id',
         required=True
     )
+
+    class Meta:
+        abstract = True
+
+
+class ShoppingCartSerializer(BaseActionSerializer):
 
     def to_representation(self, instance):
         recipe_data = RecipeFollowSerializer(instance.purchase,
@@ -190,16 +192,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         ]
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(
-        slug_field='id',
-        read_only=True,
-        default=serializers.CurrentUserDefault())
-    recipe = serializers.SlugRelatedField(
-        queryset=Recipe.objects.all(),
-        slug_field='id',
-        required=True
-    )
+class FavoriteSerializer(BaseActionSerializer):
 
     def to_representation(self, instance):
         recipe_data = RecipeFollowSerializer(instance.recipe,
@@ -218,4 +211,3 @@ class FavoriteSerializer(serializers.ModelSerializer):
                 message='Рецепт уже добавлен в избранное.'
             )
         ]
-
