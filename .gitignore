@@ -140,3 +140,5 @@ dmypy.json
 
 static/
 media/
+settings_deploy.py
+settings_local.py

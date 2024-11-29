@@ -70,12 +70,13 @@ class Recipe(models.Model):
                                  unique=True, default=create_short_link,
                                  max_length=settings.MAX_LENGTH_SHORT_URL)
     tag = models.ManyToManyField(Tag, through='RecipeTag')
+    created_at = models.DateTimeField('дата публикации', auto_now_add=True)
 
     objects = RecipeQuerySet.as_manager()
     tags_and_ingredients = RecipeManager()
 
     class Meta:
-        ordering = ('name', 'id')
+        ordering = ('-created_at', 'name')
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
         default_related_name = 'recipes'

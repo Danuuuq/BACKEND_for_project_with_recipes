@@ -27,11 +27,6 @@ class CustomUserViewSet(views.UserViewSet):
             return (permissions.IsAuthenticated(),)
         return super().get_permissions()
 
-    def get_serializer_class(self):
-        if self.action in ['create_subscribe', 'delete_subscribe']:
-            return FollowSerializer
-        return super().get_serializer_class()
-
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar')
     def update_avatar(self, request, *args, **kwargs):
         user = request.user

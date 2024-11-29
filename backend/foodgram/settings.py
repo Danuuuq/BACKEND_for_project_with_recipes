@@ -3,13 +3,13 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECRET_KEY = 'django-insecure-qyi*9n=^(k*tqp0*=fx81mk#xt)_f$2%=^&y#q-$2p3l^hy_)1'
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-# DEBUG = True
 DEBUG = os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = ['192.168.1.93', '188.242.167.244', '127.0.0.1']
+ALLOWED_HOSTS = ['158.160.3.208', 'tdeveloper.ru']
+
+CSRF_TRUSTED_ORIGINS = ['https://tdeveloper.ru']
 
 # Application definition
 
@@ -63,12 +63,6 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 # Database
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -109,7 +103,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
 
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 6,
 }
 
@@ -148,7 +142,6 @@ STATIC_ROOT = BASE_DIR / 'collected_static'
 # Media files (Image for recipes and avatar)
 
 MEDIA_URL = '/media/'
-# MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_ROOT = '/media'
 
 # Default primary key field type

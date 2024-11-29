@@ -11,7 +11,7 @@ from .serializers import (
     TagSerializer, IngredientSerializer, RecipeSerializer,
     ShoppingCartSerializer, FavoriteSerializer)
 from .models import Ingredient, Recipe, User, Tag
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientFilter
 from .permissions import OwnerOrReadOnly
 from .utils import create_shopping_cart
 
@@ -30,7 +30,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.AllowAny,)
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name',)
+    filterset_class = IngredientFilter
     http_method_names = ['get']
 
 
@@ -68,8 +68,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=True, url_path='get-link')
     def get_short_link(self, request, *args, **kwargs):
         short_link = self.get_object().short_url
-        data = {'short-url': reverse('reverse-link', args=[short_link],
-                                     request=request)}
+        data = {'short-link': reverse('reverse-link', args=[short_link],
+                                      request=request)}
         return Response(data)
 
     def create_or_delete_for_action(self, serializer_class, related_name,
@@ -118,4 +118,4 @@ class ShortLinkRedirectView(views.APIView):
 
     def get(self, request, slug):
         recipe = get_object_or_404(Recipe, short_url=slug)
-        return redirect('api:recipe-detail', recipe.id)
+        return redirect(f'/recipes/{recipe.id}/')

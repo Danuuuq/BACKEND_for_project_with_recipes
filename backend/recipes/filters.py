@@ -1,6 +1,6 @@
 import django_filters
 
-from .models import Recipe, Tag
+from .models import Recipe, Tag, Ingredient
 
 
 class RecipeFilter(django_filters.FilterSet):
@@ -16,7 +16,7 @@ class RecipeFilter(django_filters.FilterSet):
 
     class Meta:
         model = Recipe
-        fields = ['tags', 'author', 'is_in_shopping_cart', 'is_favorited']
+        fields = ('tags', 'author', 'is_in_shopping_cart', 'is_favorited')
 
     def method_for_favorited(self, queryset, name, value):
         value = True if value == '1' else False
@@ -25,3 +25,12 @@ class RecipeFilter(django_filters.FilterSet):
     def method_for_shopping_cart(self, queryset, name, value):
         value = True if value == '1' else False
         return queryset.filter(is_in_shopping_cart=value)
+
+
+class IngredientFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(field_name='name',
+                                     lookup_expr='istartswith')
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)
