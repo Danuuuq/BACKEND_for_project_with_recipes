@@ -17,11 +17,30 @@ class PurchaseStackedInline(admin.StackedInline):
     extra = 0
 
 
+class IngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    fk_name = 'recipe'
+    extra = 0
+    autocomplete_fields = ('ingredient',)
+
+
+class TagInline(admin.TabularInline):
+    model = RecipeTag
+    fk_name = 'recipe'
+    extra = 0
+
+
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('name', 'measurement_unit')
+    search_fields = ('name', )
+
+
 class RecipeAdmin(admin.ModelAdmin):
     search_fields = ('name__icontains', 'author__last_name__icontains')
     list_filter = ('tag__name', )
     list_display = ('name', 'author', 'count_favorite')
-    inlines = [FavoriteStackedInline, PurchaseStackedInline]
+    inlines = [IngredientInline, TagInline,
+               FavoriteStackedInline, PurchaseStackedInline]
     readonly_fields = ['count_favorite']
 
     def get_queryset(self, request):
@@ -32,11 +51,6 @@ class RecipeAdmin(admin.ModelAdmin):
     def count_favorite(self, obj):
         return obj._favorite_count
     count_favorite.short_description = 'В избранном'
-
-
-class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'measurement_unit')
-    search_fields = ('name', )
 
 
 admin.site.register(Recipe, RecipeAdmin)
