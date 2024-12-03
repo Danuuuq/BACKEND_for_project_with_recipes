@@ -45,17 +45,6 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
-
-    def create_short_link():
-        not_unique = True
-        while not_unique:
-            short_url = ''.join(
-                random.choices(settings.SYMBOLS_FOR_SHORT_URL,
-                               k=settings.MAX_LENGTH_SHORT_URL))
-            if not Recipe.objects.filter(short_url=short_url).exists():
-                not_unique = False
-        return short_url
-
     name = models.CharField('название',
                             max_length=settings.MAX_LENGTH_NAME_RECIPE)
     text = models.TextField('описание', null=False, blank=False)
@@ -67,13 +56,28 @@ class Recipe(models.Model):
                                        validators=[MinValueValidator(1)])
     ingredient = models.ManyToManyField(Ingredient, through='RecipeIngredient')
     short_url = models.CharField('Короткая ссылка', editable=False,
-                                 unique=True, default=create_short_link,
+                                 unique=True,
                                  max_length=settings.MAX_LENGTH_SHORT_URL)
     tag = models.ManyToManyField(Tag, through='RecipeTag')
     created_at = models.DateTimeField('дата публикации', auto_now_add=True)
 
     objects = RecipeQuerySet.as_manager()
     tags_and_ingredients = RecipeManager()
+
+    def save(self, *args, **kwargs):
+        if not self.short_url:
+            self.short_url = self.create_short_link()
+        super().save(*args, **kwargs)
+
+    def create_short_link(self):
+        not_unique = True
+        while not_unique:
+            short_url = ''.join(
+                random.choices(settings.SYMBOLS_FOR_SHORT_URL,
+                               k=settings.MAX_LENGTH_SHORT_URL))
+            if not Recipe.objects.filter(short_url=short_url).exists():
+                not_unique = False
+        return short_url
 
     class Meta:
         ordering = ('-created_at', 'name')
