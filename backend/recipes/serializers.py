@@ -1,6 +1,7 @@
 import base64
 
 from django.core.files.base import ContentFile
+from django.db import transaction
 from rest_framework import serializers, validators
 
 from .models import (Ingredient, Recipe, RecipeIngredient,
@@ -125,6 +126,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             for ingredient in ingredients
         ])
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         tags = validated_data.pop('recipetag')
         ingredients = validated_data.pop('recipeingredient')
@@ -136,6 +138,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         self._related_data_save(instance, tags, ingredients)
         return instance
 
+    @transaction.atomic
     def create(self, validated_data):
         tags = validated_data.pop('recipetag')
         ingredients = validated_data.pop('recipeingredient')

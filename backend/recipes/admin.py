@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.db.models import Count
+from django.forms.models import BaseInlineFormSet
 
 from .models import (Recipe, Ingredient, RecipeIngredient,
                      RecipeTag, Favorite, PurchaseUser, Tag)
@@ -17,17 +19,31 @@ class PurchaseStackedInline(admin.StackedInline):
     extra = 0
 
 
+class CustomInlineFormSet(BaseInlineFormSet):
+
+    def clean(self) -> None:
+        super().clean()
+        count = sum(1 for form in self.forms
+                    if not form.cleaned_data.get('DELETE', False))
+        if count < 1:
+            raise ValidationError('Нельзя удалять все объекты.')
+
+
 class IngredientInline(admin.TabularInline):
     model = RecipeIngredient
     fk_name = 'recipe'
     extra = 0
     autocomplete_fields = ('ingredient',)
+    min_num = 1
+    formset = CustomInlineFormSet
 
 
 class TagInline(admin.TabularInline):
     model = RecipeTag
     fk_name = 'recipe'
     extra = 0
+    min_num = 1
+    formset = CustomInlineFormSet
 
 
 class IngredientAdmin(admin.ModelAdmin):
