@@ -3,9 +3,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', '5m#3(e-!ap5pitwh+$p@vyl77q$i$tyb7a_ji%^%(0&05$2y8w')
 
-DEBUG = os.getenv('DEBUG') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['158.160.3.208', 'tdeveloper.ru']
 
@@ -111,9 +111,9 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user_create': 'users.serializers.CustomUserCreateSerializer',
-        'user': 'users.serializers.UserSerializer',
-        'current_user': 'users.serializers.UserSerializer'
+        'user_create': 'api.serializers.CustomUserCreateSerializer',
+        'user': 'api.serializers.UserSerializer',
+        'current_user': 'api.serializers.UserSerializer'
     },
     'PERMISSIONS': {
         'user': ['rest_framework.permissions.AllowAny'],
@@ -137,31 +137,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'collected_static'
 
 # Media files (Image for recipes and avatar)
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/media'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Variables for app
-
-MAX_LENGTH_NAME_USER = 150
-MAX_LENGTH_EMAIL = 254
-MAX_LENGTH_TAG = 32
-MAX_LENGTH_SHORT_URL = 6
-MAX_LENGTH_NAME_RECIPE = 256
-MAX_LENGTH_NAME_INGREDIENT = 128
-MAX_LENGTH_MEASUREMENT_UNIT = 64
-
-ACTION_FOR_USER = ['me', 'update_avatar', 'subscriptions', 'delete_avatar',
-                   'create_subscribe', 'delete_subscribe', 'add_favorite',
-                   'delete_favorite']
-
-SAFE_ACTION_FOR_RECIPE = ['list', 'retrieve', 'get_short_link']
-
-SYMBOLS_FOR_SHORT_URL = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz234567890'

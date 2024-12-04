@@ -1,13 +1,13 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 
-from .models import Ingredient
+from recipes.models import Ingredient
 
 
 def create_shopping_cart(user):
     """Формирование списка покупок пользователя."""
     ingredients = (Ingredient.objects
-                   .filter(ingredientrecipe__recipe__purchase__user=user)
+                   .filter(ingredientrecipe__recipe__purchases__user=user)
                    .annotate(total_amount=Sum('ingredientrecipe__amount')))
 
     response = HttpResponse(content_type='text/plain')

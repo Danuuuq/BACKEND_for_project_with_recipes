@@ -4,7 +4,7 @@ from django.db import models
 class IngredientQuerySet(models.QuerySet):
 
     def with_related_data(self):
-        return self.prefetch_related('ingredient')
+        return self.prefetch_related('ingredient', )
 
 
 class IngredientManager(models.Manager):

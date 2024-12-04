@@ -1,10 +1,10 @@
 import random
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from . import constants
 from .managers import (IngredientManager, IngredientQuerySet,
                        RecipeManager, RecipeQuerySet)
 
@@ -14,15 +14,21 @@ User = get_user_model()
 class Ingredient(models.Model):
 
     name = models.CharField('название',
-                            max_length=settings.MAX_LENGTH_NAME_INGREDIENT)
+                            max_length=constants.MAX_LENGTH_NAME_INGREDIENT)
     measurement_unit = models.CharField(
-        'мера измерения', max_length=settings.MAX_LENGTH_MEASUREMENT_UNIT)
+        'мера измерения', max_length=constants.MAX_LENGTH_MEASUREMENT_UNIT)
 
     class Meta:
         ordering = ('name', 'id')
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        default_related_name = 'ingredient'
+        default_related_name = 'ingredients'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='Unique Ingredient constraint'
+            )
+        ]
 
     def __str__(self):
         return self.name
@@ -30,15 +36,15 @@ class Ingredient(models.Model):
 
 class Tag(models.Model):
     name = models.CharField('название', unique=True,
-                            max_length=settings.MAX_LENGTH_TAG)
+                            max_length=constants.MAX_LENGTH_TAG)
     slug = models.SlugField('slug название', unique=True,
-                            max_length=settings.MAX_LENGTH_TAG)
+                            max_length=constants.MAX_LENGTH_TAG)
 
     class Meta:
         ordering = ('name', 'id')
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
-        default_related_name = 'tag'
+        default_related_name = 'tags'
 
     def __str__(self):
         return self.name
@@ -46,18 +52,19 @@ class Tag(models.Model):
 
 class Recipe(models.Model):
     name = models.CharField('название',
-                            max_length=settings.MAX_LENGTH_NAME_RECIPE)
+                            max_length=constants.MAX_LENGTH_NAME_RECIPE)
     text = models.TextField('описание', null=False, blank=False)
     author = models.ForeignKey(User,
                                on_delete=models.CASCADE, verbose_name='автор')
     image = models.ImageField('изображение', upload_to='recipes/images/',
                               null=False, blank=False)
     cooking_time = models.IntegerField('время готовки',
-                                       validators=[MinValueValidator(1)])
+                                       validators=[MinValueValidator(
+                                           constants.MIN_VALUE)])
     ingredient = models.ManyToManyField(Ingredient, through='RecipeIngredient')
     short_url = models.CharField('Короткая ссылка', editable=False,
                                  unique=True,
-                                 max_length=settings.MAX_LENGTH_SHORT_URL)
+                                 max_length=constants.MAX_LENGTH_SHORT_URL)
     tag = models.ManyToManyField(Tag, through='RecipeTag')
     created_at = models.DateTimeField('дата публикации', auto_now_add=True)
 
@@ -73,8 +80,8 @@ class Recipe(models.Model):
         not_unique = True
         while not_unique:
             short_url = ''.join(
-                random.choices(settings.SYMBOLS_FOR_SHORT_URL,
-                               k=settings.MAX_LENGTH_SHORT_URL))
+                random.choices(constants.SYMBOLS_FOR_SHORT_URL,
+                               k=constants.MAX_LENGTH_SHORT_URL))
             if not Recipe.objects.filter(short_url=short_url).exists():
                 not_unique = False
         return short_url
@@ -98,7 +105,8 @@ class RecipeIngredient(models.Model):
                                    related_name='ingredientrecipe',
                                    verbose_name='ингредиент')
     amount = models.IntegerField('количество',
-                                 validators=[MinValueValidator(1)])
+                                 validators=[MinValueValidator(
+                                     constants.MIN_VALUE)])
 
     objects = IngredientQuerySet.as_manager()
     names_ingredients = IngredientManager()
@@ -111,7 +119,7 @@ class RecipeIngredient(models.Model):
             )
         ]
         ordering = ('recipe', 'ingredient')
-        verbose_name = 'ингридиенты рецепта'
+        verbose_name = 'ингредиенты рецепта'
         verbose_name_plural = 'Ингридиенты рецептов'
         default_manager_name = 'names_ingredients'
 
@@ -125,7 +133,7 @@ class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='saver', verbose_name='пользователь')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='favorite', verbose_name='рецепт')
+                               related_name='favorites', verbose_name='рецепт')
 
     class Meta:
         constraints = [
@@ -167,7 +175,7 @@ class PurchaseUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='buyer', verbose_name='пользователь')
     purchase = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                                 related_name='purchase',
+                                 related_name='purchases',
                                  verbose_name='рецепт')
 
     class Meta:

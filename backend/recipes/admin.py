@@ -19,7 +19,7 @@ class PurchaseStackedInline(admin.StackedInline):
     extra = 0
 
 
-class CustomInlineFormSet(BaseInlineFormSet):
+class NotEmptyFieldsInlineFormSet(BaseInlineFormSet):
 
     def clean(self) -> None:
         super().clean()
@@ -35,7 +35,7 @@ class IngredientInline(admin.TabularInline):
     extra = 0
     autocomplete_fields = ('ingredient',)
     min_num = 1
-    formset = CustomInlineFormSet
+    formset = NotEmptyFieldsInlineFormSet
 
 
 class TagInline(admin.TabularInline):
@@ -43,7 +43,7 @@ class TagInline(admin.TabularInline):
     fk_name = 'recipe'
     extra = 0
     min_num = 1
-    formset = CustomInlineFormSet
+    formset = NotEmptyFieldsInlineFormSet
 
 
 class IngredientAdmin(admin.ModelAdmin):
@@ -61,7 +61,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        queryset = queryset.annotate(_favorite_count=Count('favorite'))
+        queryset = queryset.annotate(_favorite_count=Count('favorites'))
         return queryset
 
     def count_favorite(self, obj):
