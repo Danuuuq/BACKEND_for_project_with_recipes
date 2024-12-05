@@ -24,7 +24,7 @@
 ## Данные для тестирования:
 
 *http://tdeveloper.ru/* - Веб-сервер с полным функционалом  
-*http://tdeveloper.ru/admin/* - Административная панель
+*http://tdeveloper.ru/admin/* - Административная панель  
 *https://tdeveloper.ru/api/docs/* - Документация по API
 
 <details>
