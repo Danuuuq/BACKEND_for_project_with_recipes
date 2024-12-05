@@ -28,8 +28,8 @@
 
 <details>
 <summary> <b>Учетная запись администратора:</b> </summary>
-  username: *test_admin*
-  password: *Qq123456*
+  username: test_admin   
+  password: Qq123456
 </details>
 
 ## Примеры запросов к API:
