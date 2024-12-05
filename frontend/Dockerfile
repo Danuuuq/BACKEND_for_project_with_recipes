@@ -5,4 +5,5 @@ COPY package*.json ./
 RUN npm install
 COPY . ./
 RUN npm run build
-CMD cp -r build result_build
+RUN mkdir -p /static/docs && cp -r build result_build && cp -r docs /static/docs
+CMD cp -r /app/build/. /static/
