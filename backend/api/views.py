@@ -4,8 +4,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import permissions, viewsets, views, status
 from rest_framework.decorators import action
-from rest_framework.pagination import (LimitOffsetPagination,
-                                       PageNumberPagination)
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
@@ -43,14 +41,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.tags_and_ingredients
     serializer_class = RecipeSerializer
     permission_classes = (permissions.AllowAny,)
-    pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-
-    def get_pagination_class(self):
-        if self.request.query_params.get('limit') is None:
-            return PageNumberPagination
-        return self.pagination_class
 
     def get_queryset(self):
         queryset = self.queryset
@@ -133,7 +125,6 @@ class ShortLinkRedirectView(views.APIView):
 
 class CustomUserViewSet(UserViewSet):
     queryset = User.objects.with_related_data()
-    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         queryset = self.queryset
