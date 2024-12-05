@@ -32,9 +32,6 @@
   password: *Qq123456*
 </details>
 
-username: *test_admin*
-password: *Qq123456*
-
 ## Примеры запросов к API:
 
 1. **Основные эндпоинты API.**
