@@ -21,28 +21,42 @@
 5. ORM: Django 5.1
 6. API: DRF 3.15
 
+## Данные для тестирования:
+
+*http://tdeveloper.ru/* - Веб-сервер с полным функционалом
+*http://tdeveloper.ru/admin/* - Административная панель
+
+<details>
+<summary> <b>Учетная запись администратора:</b> </summary>
+  username: *test_admin*
+  password: *Qq123456*
+</details>
+
+username: *test_admin*
+password: *Qq123456*
+
 ## Примеры запросов к API:
 
 1. **Основные эндпоинты API.**
 
-*http://example.url/api/users/* - POST - регистрация пользователя, GET - просмотр пользователей;
+*http://tdeveloper.ru/api/users/* - POST - регистрация пользователя, GET - просмотр пользователей;
 
-*http://example.url/api/tags/* - GET - просмотр тегов;
+*http://tdeveloper.ru/api/tags/* - GET - просмотр тегов;
 
-*http://example.url/api/ingredients/* - GET - просмотр ингредиентов;
+*http://tdeveloper.ru/api/ingredients/* - GET - просмотр ингредиентов;
 
-*http://example.url/api/recipes/* - GET/POST - просмотр/добавление рецептов;
+*http://tdeveloper.ru/api/recipes/* - GET/POST - просмотр/добавление рецептов;
 
-*http://example.url/api/recipes/{recipes_id}/shopping_cart/* - POST - добавление в список покупок;
+*http://tdeveloper.ru/api/recipes/{recipes_id}/shopping_cart/* - POST - добавление в список покупок;
 
-*http://example.url/api/recipes/{recipes_id}/favorite/* - POST - добавление в избранное;
+*http://tdeveloper.ru/api/recipes/{recipes_id}/favorite/* - POST - добавление в избранное;
 
-*http://example.url/api/users/{user_id}/subscriptions/* - POST/DELETE - создание/удаление подписки на пользователя;
+*http://tdeveloper.ru/api/users/{user_id}/subscriptions/* - POST/DELETE - создание/удаление подписки на пользователя;
 
 2. **Регистрация и получение токена.**
 Эндпоинт: */api/users/* принимает запросы GET и POST.
 POST - Регистрация пользователя для регистрации:
-*http://example.url/api/v1/users/* 
+*http://tdeveloper.ru/api/v1/users/* 
 ```json
 {
     "email": "string",
@@ -53,7 +67,7 @@ POST - Регистрация пользователя для регистрац
 }
 ```
 POST - Получить токен указав почту и пароль:
-*http://example.url/api/auth/token/login/* -
+*http://tdeveloper.ru/api/auth/token/login/* -
 ```json
 {
     "email": "string",
