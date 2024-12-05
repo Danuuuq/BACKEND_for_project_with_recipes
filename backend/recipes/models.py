@@ -99,10 +99,10 @@ class Recipe(models.Model):
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='recipeingredient',
+                               related_name='recipe_ingredient',
                                verbose_name='рецепт')
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE,
-                                   related_name='ingredientrecipe',
+                                   related_name='ingredient_recipe',
                                    verbose_name='ингредиент')
     amount = models.IntegerField('количество',
                                  validators=[MinValueValidator(
@@ -120,7 +120,7 @@ class RecipeIngredient(models.Model):
         ]
         ordering = ('recipe', 'ingredient')
         verbose_name = 'ингредиенты рецепта'
-        verbose_name_plural = 'Ингридиенты рецептов'
+        verbose_name_plural = 'Ингредиенты рецептов'
         default_manager_name = 'names_ingredients'
 
     def __str__(self):
@@ -152,9 +152,9 @@ class Favorite(models.Model):
 
 class RecipeTag(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE,
-                            related_name='tagrecipe', verbose_name='тег')
+                            related_name='tag_recipe', verbose_name='тег')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='recipetag', verbose_name='рецепт')
+                               related_name='recipe_tag', verbose_name='рецепт')
 
     class Meta:
         constraints = [

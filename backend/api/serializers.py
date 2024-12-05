@@ -153,9 +153,9 @@ class RecipeTagSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.BooleanField(read_only=True, default=False)
-    tags = RecipeTagSerializer(many=True, source='recipetag', required=True)
+    tags = RecipeTagSerializer(many=True, source='recipe_tag', required=True)
     ingredients = RecipeIngredientSerializer(many=True,
-                                             source='recipeingredient',
+                                             source='recipe_ingredient',
                                              required=True)
     is_in_shopping_cart = serializers.BooleanField(
         read_only=True, default=False)
@@ -170,9 +170,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         self._validate_non_empty_field(attrs,
-                                       'recipetag', 'tags')
+                                       'recipe_tag', 'tags')
         self._validate_non_empty_field(attrs,
-                                       'recipeingredient', 'ingredients')
+                                       'recipe_ingredient', 'ingredients')
         return super().validate(attrs)
 
     def _validate_unique_items(self, attrs, field, error_field):
@@ -207,20 +207,20 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        tags = validated_data.pop('recipetag')
-        ingredients = validated_data.pop('recipeingredient')
+        tags = validated_data.pop('recipe_tag')
+        ingredients = validated_data.pop('recipe_ingredient')
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        instance.recipeingredient.all().delete()
-        instance.recipetag.all().delete()
+        instance.recipe_ingredient.all().delete()
+        instance.recipe_tag.all().delete()
         self._related_data_save(instance, tags, ingredients)
         return instance
 
     @transaction.atomic
     def create(self, validated_data):
-        tags = validated_data.pop('recipetag')
-        ingredients = validated_data.pop('recipeingredient')
+        tags = validated_data.pop('recipe_tag')
+        ingredients = validated_data.pop('recipe_ingredient')
         recipe = Recipe.objects.create(**validated_data)
         self._related_data_save(recipe, tags, ingredients)
         return recipe

@@ -16,7 +16,7 @@ class IngredientManager(models.Manager):
 class RecipeQuerySet(models.QuerySet):
 
     def with_related_data(self):
-        return self.prefetch_related('recipetag', 'recipeingredient')
+        return self.prefetch_related('recipe_tag', 'recipe_ingredient')
 
     def is_favorite_and_shop_cart(self, user):
         favorite = user.saver.filter(recipe=models.OuterRef('pk'))

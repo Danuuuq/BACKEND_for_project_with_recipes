@@ -9,9 +9,9 @@ from .managers import UserQuerySet
 class User(AbstractUser):
 
     name_validator = RegexValidator(
-        regex=r"^[a-zA-Zа-яА-ЯёЁ\s\-\.\`]+$",
+        regex=constants.REGEX,
         message=(
-            'Имя и Фамилия должны содержать буквенные символы'
+            'Имя и Фамилия должны содержать буквенные символы '
             'или разрешенные символы `/./- и пробел'
         )
     )

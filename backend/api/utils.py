@@ -7,8 +7,8 @@ from recipes.models import Ingredient
 def create_shopping_cart(user):
     """Формирование списка покупок пользователя."""
     ingredients = (Ingredient.objects
-                   .filter(ingredientrecipe__recipe__purchases__user=user)
-                   .annotate(total_amount=Sum('ingredientrecipe__amount')))
+                   .filter(ingredient_recipe__recipe__purchases__user=user)
+                   .annotate(total_amount=Sum('ingredient_recipe__amount')))
 
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = (
