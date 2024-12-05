@@ -4,10 +4,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import permissions, viewsets, views, status
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import (LimitOffsetPagination,
+                                       PageNumberPagination)
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.settings import api_settings
 
 from . import constants
 from .filters import RecipeFilter, IngredientFilter
@@ -49,7 +49,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_pagination_class(self):
         if self.request.query_params.get('limit') is None:
-            return api_settings.DEFAULT_PAGINATION_CLASS
+            return PageNumberPagination
         return self.pagination_class
 
     def get_queryset(self):
