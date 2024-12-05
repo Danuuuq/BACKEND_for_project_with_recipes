@@ -131,9 +131,11 @@ class RecipeIngredient(models.Model):
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name='saver', verbose_name='пользователь')
+                             related_name='saver',
+                             verbose_name='пользователь')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='favorites', verbose_name='рецепт')
+                               related_name='favorites',
+                               verbose_name='рецепт')
 
     class Meta:
         constraints = [
@@ -152,9 +154,11 @@ class Favorite(models.Model):
 
 class RecipeTag(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE,
-                            related_name='tag_recipe', verbose_name='тег')
+                            related_name='tag_recipe',
+                            verbose_name='тег')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='recipe_tag', verbose_name='рецепт')
+                               related_name='recipe_tag',
+                               verbose_name='рецепт')
 
     class Meta:
         constraints = [
@@ -173,7 +177,8 @@ class RecipeTag(models.Model):
 
 class PurchaseUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name='buyer', verbose_name='пользователь')
+                             related_name='buyer',
+                             verbose_name='пользователь')
     purchase = models.ForeignKey(Recipe, on_delete=models.CASCADE,
                                  related_name='purchases',
                                  verbose_name='рецепт')
