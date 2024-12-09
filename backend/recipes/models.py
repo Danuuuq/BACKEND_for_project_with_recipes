@@ -3,6 +3,7 @@ import random
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.urls import reverse
 
 from . import constants
 from .managers import (IngredientManager, IngredientQuerySet,
@@ -70,6 +71,10 @@ class Recipe(models.Model):
 
     objects = RecipeQuerySet.as_manager()
     tags_and_ingredients = RecipeManager()
+
+    def get_absolute_url(self):
+        return reverse("recipe-detail", kwargs={"pk": self.pk})
+    
 
     def save(self, *args, **kwargs):
         if not self.short_url:

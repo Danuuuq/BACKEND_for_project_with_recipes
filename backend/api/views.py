@@ -120,7 +120,11 @@ class ShortLinkRedirectView(views.APIView):
 
     def get(self, request, slug):
         recipe = get_object_or_404(Recipe, short_url=slug)
-        return redirect(f'/recipes/{recipe.id}/')
+        return redirect(recipe.get_absolute_url())
+
+    # def get(self, request, slug):
+    #     recipe = get_object_or_404(Recipe, short_url=slug)
+    #     return redirect(f'/recipes/{recipe.id}/')
 
 
 class CustomUserViewSet(UserViewSet):
